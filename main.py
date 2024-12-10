@@ -23,6 +23,8 @@ def webhook():
     json_str = request.get_data().decode("UTF-8")
     update_data = json.loads(json_str)
     update = Update.de_json(update_data, telegram.Bot(token=os.getenv('TOKEN')))
+    print(update)
+    handle_message(update=update)
     application.update_queue.put(update)
     return "OK", 200
 
