@@ -4,6 +4,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 import os
 from dotenv import load_dotenv
 import telegram
+import json
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello 😊")
@@ -12,26 +13,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
     await update.message.reply_text(f"You said: {user_message}")
 
-# Hàm xử lý khi có lỗi
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"Error: {context.error}")
 
-# Khởi tạo Flask app
 app = Flask(__name__)
 
-# Hàm xử lý Webhook
 @app.route(f"/{os.getenv('TOKEN')}", methods=["POST"])
 def webhook():
     json_str = request.get_data().decode("UTF-8")
-    update = Update.de_json(json_str, telegram.Bot(token=os.getenv('TOKEN')))
-    
+    update_data = json.loads(json_str)
+    update = Update.de_json(update_data, telegram.Bot(token=os.getenv('TOKEN')))
     application.update_queue.put(update)
-    
     return "OK", 200
 
 @app.route(f"/", methods=["GET"])
 def health():
-    
     return "Running", 200
 
 if __name__ == "__main__":
