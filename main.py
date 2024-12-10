@@ -29,9 +29,8 @@ def webhook():
     
     return "OK", 200
 
-@app.route("/", methods=["POST"])
+@app.route("/", methods=["GET"])
 def webhook():
-    json_str = request.get_data().decode("UTF-8")
     
     return "Running", 200
 
