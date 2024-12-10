@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 import telegram
 import json
+import threading
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello 😊")
@@ -18,13 +19,16 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 app = Flask(__name__)
 
+def process_update(update):
+    application.update_queue.put(update)
+
 @app.route(f"/{os.getenv('TOKEN')}", methods=["POST"])
 def webhook():
     try:
         json_str = request.get_data().decode("UTF-8")
         update_data = json.loads(json_str)
         update = Update.de_json(update_data, telegram.Bot(token=os.getenv('TOKEN')))
-        application.update_queue.put(update)
+        threading.Thread(target=process_update, args=(update,)).start()  # Xử lý update trong một thread riêng
         return "OK", 200
     except Exception as e:
         print(f"Error processing webhook: {e}")
@@ -46,6 +50,6 @@ if __name__ == "__main__":
     application.add_error_handler(error_handler)
 
     bot = telegram.Bot(token=TOKEN)
-    bot.set_webhook(url=f"https://your-app-domain.com/{TOKEN}")
+    bot.set_webhook(url=f"https://manager-chat-bot.onrender.com/{TOKEN}")
 
     app.run(host='0.0.0.0', port=5000)
