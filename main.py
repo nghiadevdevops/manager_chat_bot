@@ -22,6 +22,11 @@ def webhook():
 
     return "ok", 200
 
+@app.route(f"/", methods=["GET"])
+def health():
+
+    return "ok", 200
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8443))
 
