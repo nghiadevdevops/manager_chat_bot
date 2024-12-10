@@ -1,36 +1,54 @@
 from flask import Flask, request
-from telegram import Bot
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import os
 from dotenv import load_dotenv
+import telegram
 
-load_dotenv()
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Hello 😊")
 
-TOKEN = os.getenv("TOKEN")
-WEBHOOK_URL = f"https://manager-chat-bot.onrender.com/{TOKEN}"
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text
+    await update.message.reply_text(f"You said: {user_message}")
+
+# Hàm xử lý khi có lỗi
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"Error: {context.error}")
+
+# Khởi tạo Flask app
 app = Flask(__name__)
-bot = Bot(token=TOKEN)
 
-@app.route(f"/{TOKEN}", methods=["POST"])
+# Hàm xử lý Webhook
+@app.route(f"/{os.getenv('TOKEN')}", methods=["POST"])
 def webhook():
-    update = request.get_json()
+    json_str = request.get_data().decode("UTF-8")
+    update = Update.de_json(json_str, telegram.Bot(token=os.getenv('TOKEN')))
+    
+    application.update_queue.put(update)
+    
+    return "OK", 200
 
-    if "message" in update:
-        chat_id = update["message"]["chat"]["id"]
-        text = update["message"].get("text", "")
-
-        bot.send_message(chat_id=chat_id, text=f"You said: {text}")
-
-    return "ok", 200
-
-@app.route(f"/", methods=["GET"])
-def health():
-
-    return "ok", 200
+@app.route("/", methods=["POST"])
+def webhook():
+    json_str = request.get_data().decode("UTF-8")
+    
+    return "Running", 200
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8443))
+    load_dotenv()
 
-    bot.set_webhook(url=WEBHOOK_URL)
-    print(f"Webhook set to {WEBHOOK_URL}")
+    TOKEN = os.getenv("TOKEN")
 
-    app.run(host="0.0.0.0", port=port)
+    application = ApplicationBuilder().token(TOKEN).build()
+
+    application.add_handler(CommandHandler("start", start))
+
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    application.add_error_handler(error_handler)
+
+    bot = telegram.Bot(token=TOKEN)
+    bot.set_webhook(url=f"https://manager-chat-bot.onrender.com/{TOKEN}")
+
+    app.run(host='0.0.0.0', port=5000)
