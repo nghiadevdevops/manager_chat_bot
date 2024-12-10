@@ -9,7 +9,7 @@ import json
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello 😊")
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(update: Update):
     user_message = update.message.text
     await update.message.reply_text(f"You said: {user_message}")
 
